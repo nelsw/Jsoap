@@ -1,4 +1,4 @@
-package org.jsoap;
+package org.jsoap.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Value;
@@ -37,7 +37,7 @@ public class JsoapObjectMapper {
      *
      * @return a lazy initialized and volatile {@link JsoapObjectMapper} instance
      */
-    static JsoapObjectMapper getInstance() {
+    public static JsoapObjectMapper getInstance() {
         if (instance == null) {
             // Required for fully concurrent, thread safe implementation.
             synchronized (JsoapObjectMapper.class) {

@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.URL;
-import org.jsoap.JsoapUtils;
 
 import javax.validation.constraints.NotNull;
 import java.net.InetSocketAddress;
@@ -22,7 +21,7 @@ import java.util.Objects;
 @Data
 @Accessors(fluent = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class JsoapRequest implements JsoapAgent.AgentRequest {
+public class JsoapRequest {
 
     /**
      * soap message url
@@ -77,10 +76,6 @@ public class JsoapRequest implements JsoapAgent.AgentRequest {
         return this;
     }
 
-    public JsoapRequest table(String rootTag, String childTag) {
-        return table(rootTag, childTag, "");
-    }
-
     /*
         proxy stuff
      */
@@ -106,11 +101,4 @@ public class JsoapRequest implements JsoapAgent.AgentRequest {
         }
     }
 
-    public String json() {
-        return JsoapUtils.json(data);
-    }
-
-    public JsoapRequest get() {
-        return this;
-    }
 }

@@ -1,11 +1,13 @@
 package org.jsoap.model;
 
+import lombok.AccessLevel;
 import lombok.Value;
 import lombok.experimental.Accessors;
-import org.jsoap.JsoapUtils;
+import lombok.experimental.FieldDefaults;
 
 @Value
-@Accessors(fluent = true)
+@Accessors(chain = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class JsoapResponse {
 
     Integer code;
