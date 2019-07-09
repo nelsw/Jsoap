@@ -21,7 +21,11 @@ allprojects {
     }
 }
 ```
-
+```groovy
+dependencies {
+    implementation 'com.github.connorvanelswyk:Jsoap:LATEST'
+}
+```
 ### maven
 Include in your pom.xml:
 ```xml
@@ -44,7 +48,7 @@ Include in your build.sbt:
 resolvers += "jitpack" at "https://jitpack.io"
 ```
 ```
-libraryDependencies += "com.github.User" % "Repo" % "Tag"
+libraryDependencies += "com.github.connorvanelswyk" % "Jsoap" % "LATEST"
 ```
 
 ### leiningen
@@ -53,7 +57,7 @@ Include in your project.clj
 :repositories [["jitpack" "https://jitpack.io"]]
 ```
 ```
-:dependencies [[com.github.User/Repo "Tag"]]
+:dependencies [[com.github.connorvanelswyk/Jsoap "LATEST"]]
 ```
 
 ## Usage
