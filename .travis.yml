@@ -1,0 +1,26 @@
+language: java
+sudo: false
+
+cache:
+  apt: true
+  directories:
+    - ~/.m2
+
+branches:
+  only:
+    - master
+
+install:
+  -
+
+matrix:
+  fast_finish: true
+  include:
+    # OpenJDK8 build
+    - jdk: openjdk8
+      env:
+         - DESC="build with OpenJDK8"
+         - CMD="mvn clean install"
+
+after_success:
+  - mvn clean test jacoco:report coveralls:report

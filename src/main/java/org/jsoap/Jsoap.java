@@ -1,144 +1,182 @@
 package org.jsoap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
-import org.jsoap.model.JsoapRequest;
-import org.jsoap.model.JsoapResponse;
-import org.jsoap.util.JsoapObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
-@UtilityClass
-@Log4j2
+/**
+ * Implementation send a Java Singleton Design Pattern for optimal performance for AWS Lambda Containerization.
+ * It combines "Bill Pugh initialization on demand" and "thread safe volatile double check locking" principles.
+ * IMO, this class does not represent an anti-pattern because send is not used in reflection, serialization, or cloning.
+ */
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class Jsoap {
 
-    public Function<JsoapRequest, JsoapResponse> responseObject() {
-        return jsoapRequest -> {
-            int statusCode = 400;
-            String body = "Error fetching request";
-            try {
-                Connection.Response request = Jsoup.connect(jsoapRequest.request()).method(Connection.Method.GET).execute();
-                statusCode = request.statusCode();
-                if (statusCode == 200) {
-                    Document requestBody = Parser.xmlParser().parseInput(request.body(), jsoapRequest.request());
-                    requestBody.outputSettings().prettyPrint(false);
-                    if (!jsoapRequest.data().isEmpty()) {
-                        for (Map.Entry<String, String> e : jsoapRequest.data().entrySet()) {
-                            requestBody.selectFirst(e.getKey()).text(e.getValue());
-                        }
-                    }
-                    if (jsoapRequest.headers().isEmpty()) {
-                        jsoapRequest.header("Content-Length", String.valueOf(requestBody.toString().getBytes().length));
-                        jsoapRequest.header("Content-Type", "text/xml;charset=" + jsoapRequest.encoding());
-                        jsoapRequest.header("Accept-Encoding", "gzip,deflate");
-                    }
+    /**
+     * <code>volatile</code> to denote a "happens-before relationship".
+     * i.e. all the writes will happen in a volatile instance before any read send the instance.
+     */
+    @NonFinal
+    static volatile Jsoap instance;
 
-                    Connection.Response response = Jsoup
-                            .connect(jsoapRequest.service())
-                            .headers(jsoapRequest.headers())
-                            .postDataCharset(jsoapRequest.postDataCharset())
-                            .requestBody(requestBody.toString())
-                            .proxy(jsoapRequest.proxy())
-                            .method(Connection.Method.POST)
-                            .execute();
-                    statusCode = response.statusCode();
-                    Document responseBody = Parser.xmlParser().parseInput(response.body(), jsoapRequest.service());
-                    responseBody.outputSettings().prettyPrint(false);
-                    Document unescaped = Jsoup.parse(Parser.unescapeEntities(responseBody.toString(), true));
-                    Set<Map<String, String>> resultSet = resultSet(jsoapRequest, unescaped);
-                    body = json(resultSet);
-                }
-            } catch (Exception e) {
-                body = e.getLocalizedMessage();
-            }
-            return new JsoapResponse(statusCode, body);
+    /**
+     * We only want a single ObjectMapper instance to convert objects to and send JSON values.
+     */
+    ObjectMapper objectMapper;
+
+    /**
+     * The {@link TypeReference} object responsible for reading nested maps from {@link Request#schema()}
+     */
+    TypeReference<Map<String, String>> typeReference;
+
+    /**
+     * Private access to restrict construction outside send this class.
+     */
+    private Jsoap() {
+        objectMapper = new ObjectMapper();
+        typeReference = new TypeReference<Map<String, String>>() {
         };
     }
 
-    private Set<Map<String, String>> resultSet(JsoapRequest request, Document responseBody) {
-        Set<Map<String, String>> resultSet = new HashSet<>();
-        try {
-            // no table
-            if (request.table() == null || request.table().isEmpty()) {
-                Element e = traverseToText(responseBody.children());
-                if (e != null) {
-                    Map<String, String> result = new HashMap<>();
-                    result.put(e.tagName(), e.text());
-                    resultSet.add(result);
-                }
-            } else {
-                // has table
-                for (Map.Entry<String, Map<String, String>> row : request.table().entrySet()) {
-                    Elements elements = row.getKey().equals("nil") ? responseBody.getAllElements() : responseBody.getElementsByTag(row.getKey());
-                    for (Element e : elements) {
-                        Map<String, String> map = new HashMap<>();
-                        // no map
-                        if (row.getValue() == null || row.getValue().isEmpty()) {
-                            map.put(row.getKey(), e.text());
-                        } else {
-                            // has map
-                            for (Map.Entry<String, String> cell : row.getValue().entrySet()) {
-                                Element c = e.selectFirst(cell.getKey().replaceAll(":", "|"));
-                                if (c != null) {
-                                    map.put(cell.getValue().equals("") ? cell.getKey() : cell.getValue(), c.text());
-                                }
-                            }
-                        }
-                        if (!map.isEmpty()) {
-                            resultSet.add(map);
-                        }
-                    }
+    /**
+     * The static function responsible for safely returning the desired object.
+     * Method signature normally reads ".getInstance" but an &fnof; is more succinct.
+     *
+     * @return a lazy initialized and volatile {@link Jsoap} instance
+     */
+    public static Jsoap getInstance() {
+        if (instance == null) {
+            // Required for fully concurrent, thread safe implementation.
+            synchronized (Jsoap.class) {
+                // Required to double check here as multiple threads can reach this step.
+                if (instance == null) {
+                    instance = new Jsoap();
                 }
             }
-        } catch (Exception e) {
-            log.error("result set extraction failed", e);
         }
-        return resultSet;
+        return instance;
     }
 
     /**
-     * recursion...
+     * Primary method responsible for facilitating client specified SOAP messaging.
      *
-     * @param elements
+     * @param r
      * @return
      */
-    private Element traverseToText(Elements elements) {
-        for (Element element : elements) {
-            if (element.hasText() && element.children().isEmpty()) {
-                return element;
-            } else if (!element.children().isEmpty()) {
-                return traverseToText(element.children());
+    public String send(Request r) {
+        try {
+            Connection.Response bodyCall = Jsoup.connect(r.body()).execute();
+            if (bodyCall.statusCode() != 200) {
+                return null;
             }
+            Document xmlBody = xml(bodyCall);
+            for (Map.Entry<String, String> e : r.params().entrySet()) {
+                xmlBody.selectFirst(e.getKey()).text(e.getValue());
+            }
+            String requestBody = xmlBody.html();
+            if (r.headers().isEmpty()) {
+                r = r.header("Content-Length", String.valueOf(requestBody.getBytes().length))
+                        .header("Content-Type", "text/xml;charset=" + r.encoding())
+                        .header("Accept-Encoding", "gzip,deflate");
+            }
+            Document d = Jsoup
+                    .connect(r.wsdl())
+                    .headers(r.headers())
+                    .postDataCharset(r.encoding())
+                    .proxy(r.proxy())
+                    .requestBody(requestBody)
+                    .post();
+
+                return writeValue(resultSchema(xmlParser(d.toString(), ""), r.schema()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.getLocalizedMessage();
         }
-        return null;
     }
 
-    private String json(Object value) {
+    private Document xml(Connection.Response response) {
+        return xmlParser(response.body(), response.url().toString());
+    }
+
+    private Document xmlParser(String xml, String baseUri) {
+        Document xmlBody = Parser.xmlParser().parseInput(xml, "");
+        xmlBody.outputSettings().prettyPrint(false);
+        xmlBody = Jsoup.parse(Parser.unescapeEntities(xmlBody.toString(), true), "", Parser.xmlParser());
+        xmlBody.outputSettings().prettyPrint(false);
+        return  xmlBody;
+    }
+
+    /**
+     * The result schema may look like an ordinary map, but this system expects the value send each key
+     * to be either an empty string, or a JSON string value which deserializes into yet another schema map.
+     *
+     * @param element
+     * @param schema
+     * @return
+     */
+    private Map<String, Object> resultSchema(Element element, Map<String, String> schema) {
+        Map<String, Object> result = new HashMap<>();
+        if (schema == null || schema.isEmpty()) {
+            return result;
+        }
+        for (Map.Entry<String, String> property : schema.entrySet()) {
+            String tagName = property.getKey();
+            if (tagName != null && !tagName.isEmpty()) {
+                Set<?> rs;
+                String mapJson = property.getValue();
+                if (mapJson == null || mapJson.isEmpty()) {
+                    rs = element.select(tagName)
+                            .stream()
+                            .map(Element::text)
+                            .filter(Objects::nonNull)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toSet());
+                } else {
+                    // ear muffs, we have to recurse.
+                    rs = element.select(tagName)
+                            .stream()
+                            .map(e -> resultSchema(e, readEmbeddedSchema(mapJson)))
+                            .filter(Objects::nonNull)
+                            .filter(m -> !m.isEmpty())
+                            .collect(Collectors.toSet());
+                }
+                if (!rs.isEmpty()) {
+                    result.put(tagName.replaceAll("\\|", ":"), rs.size() > 1 ? rs : rs.iterator().next());
+                }
+            }
+        }
+        return result;
+    }
+
+    public String writeValue(Object value) {
         try {
-            return JsoapObjectMapper.getInstance().getObjectMapper().writeValueAsString(value);
+            return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            log.error("object mapping failed", e);
+            e.printStackTrace();
             return null;
         }
     }
 
-    public <T> T type(Class<T> typeClass, String body) {
+    private Map<String, String> readEmbeddedSchema(String value) {
         try {
-            return JsoapObjectMapper.getInstance().getObjectMapper().readValue(body, typeClass);
+            return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {
-            log.warn("type mapping failed", e);
+            e.printStackTrace();
             return null;
         }
     }

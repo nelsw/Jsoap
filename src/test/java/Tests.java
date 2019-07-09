@@ -1,97 +1,83 @@
 import lombok.extern.log4j.Log4j2;
 import org.jsoap.Jsoap;
-import org.jsoap.model.JsoapRequest;
-import org.jsoap.model.JsoapResponse;
+import org.jsoap.Request;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.net.Proxy;
-import java.util.Optional;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Log4j2
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class Tests {
 
-    JsoapRequest jsoapRequest;
+    private LocalDateTime localDateTime = LocalDateTime.now().plus(Duration.ofDays(5)).truncatedTo(ChronoUnit.SECONDS);
+    private Request request;
 
     @Before
     public void before() {
         System.out.println();
-        jsoapRequest = new JsoapRequest()
-                .service("https://graphical.weather.gov/xml/SOAP_server/ndfdXMLserver.php")
-                .request("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
+        request = new Request()
+                .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
     }
 
     @Test
-    public void urlBody() {
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
+    public void validRequestParams_sendValidRequest_returnValidJson() {
+        String json = Jsoap.getInstance().send(request);
+        log.debug(json);
+        assertNotNull(json);
     }
 
     @Test
     public void urlBodyData() {
-        jsoapRequest.data("listZipCodeList", "33401");
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
+        String json = Jsoap.getInstance().send(request
+                .params("listZipCodeList", "33401")
+                .schema("latLonList"));
+        log.debug(json);
+        assertNotNull(json);
     }
 
     @Test
-    public void urlBodyDataTableList() {
-        jsoapRequest.data("listZipCodeList", "33401");
-        jsoapRequest.table("nil", "latLonList", "West Palm Beach");
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
-    }
-
-    @Test
-    public void urlBodyDataTableMap() {
-        jsoapRequest.request("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml");
-        jsoapRequest.data("requestedTime", "2019-06-30T23:59:59");
-        jsoapRequest.table("gml:boundedBy", "gml:coordinates", "Coordinates");
-        jsoapRequest.table("gml:featureMember", "gml:coordinates", "Coordinates");
-        jsoapRequest.table("gml:featureMember", "app:validTime", "Time");
-        jsoapRequest.table("gml:featureMember", "app:maximumTemperature", "Max Temp");
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
+    public void urlBodyDataschemaMapJson() {
+        String json = Jsoap.getInstance().send(request
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
+                .params("requestedTime", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(localDateTime))
+                .schema("gml:boundedBy", "gml:coordinates")
+                .schema("gml:featureMember", "gml:coordinates", "app:validTime", "app:maximumTemperature"));
+        log.debug(json);
+        assertNotNull(json);
     }
 
     @Test
     public void invalid1() {
-        jsoapRequest.proxy(null);
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
+        String json = Jsoap.getInstance().send(request);
+        log.debug(json);
+        assertNotNull(json);
     }
 
     @Test
     public void invalid2() {
-        jsoapRequest.proxyHost(null);
-        jsoapRequest.proxyPort(1);
-        jsoapRequest.proxyType(Proxy.Type.SOCKS.name());
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(200, (int) jsoapResponse.getCode());
+        request.proxyPort(1);
+        request.proxyType(Proxy.Type.SOCKS.name());
+        String json = Jsoap.getInstance().send(request);
+        log.debug(json);
+        assertNotNull(json);
     }
 
     @Test
     public void invalid3() {
-        jsoapRequest.request("");
-        JsoapResponse jsoapResponse = Optional.of(jsoapRequest).map(Jsoap.responseObject()).get();
-        log.debug(jsoapResponse);
-        assertNotNull(jsoapResponse.getBody());
-        assertEquals(400, (int) jsoapResponse.getCode());
+        request.body("");
+        String json = Jsoap.getInstance().send(request);
+        log.debug(json);
+        assertNotNull(json);
     }
 
 }
