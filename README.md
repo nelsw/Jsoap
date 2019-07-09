@@ -6,14 +6,14 @@
 The last [SOAP][sp] library you'll ever use.
 
 ## Installation
-To [make (software)][ms], include this dependency into the build of your project: 
+[make (software)][ms] or include this dependency as a remote artifact into the build of your project: 
 - [gradle](#gradle)
 - [maven](#maven)
 - [sbt](#sbt)
 - [leiningen](#leiningen)
 
 ### gradle
-Include in your root build.gradle
+Include in your root build.gradle:
 ```groovy
 allprojects {
     repositories {
@@ -47,12 +47,12 @@ Include in your build.sbt:
 ```play
 resolvers += "jitpack" at "https://jitpack.io"
 ```
-```
+```play
 libraryDependencies += "com.github.connorvanelswyk" % "Jsoap" % "LATEST"
 ```
 
 ### leiningen
-Include in your project.clj
+Include in your project.clj:
 ```
 :repositories [["jitpack" "https://jitpack.io"]]
 ```
@@ -62,10 +62,53 @@ Include in your project.clj
 
 ## Usage
 
+```java
+public class RequestTests {
+    
+    @Test
+    public void simpleTest() {
+        
+        Request request = new Request()
+                        .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
+                        .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
+                
+        String expected = "{\"\":\"39.0138,-77.0242 39.2851,-77.8575\"}";
+        
+        String actual = Jsoap.getInstance().send(request);
+        
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void complexTest() {
+        
+        String requestedTime =
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                        LocalDateTime.now()
+                                .plus(Duration.ofDays(5))
+                                .truncatedTo(ChronoUnit.SECONDS));
+        
+        Request request = new Request()
+                .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
+                .params("requestedTime", requestedTime)
+                .schema("gml:boundedBy", "gml:coordinates")
+                .schema("gml:featureMember", "gml:coordinates", "app:validTime", "app:maximumTemperature");
+        
+        String expected = "{\"gml:featureMember\":[{\"app:validTime\":\"2019-07-14T18:46:44\",\"gml:coordinates\":\"-77.02,38.99\",\"app:maximumTemperature\":\"91.0\"},{\"app:validTime\":\"2019-07-14T18:46:44\",\"gml:coordinates\":\"-122.30,47.6\",\"app:maximumTemperature\":\"73.0\"},{\"app:validTime\":\"2019-07-14T18:46:44\",\"gml:coordinates\":\"-104.80,39.70\",\"app:maximumTemperature\":\"92.0\"}],\"gml:boundedBy\":{\"gml:coordinates\":\"-122.30,38.99 -77.02,47.6\"}}";
+
+        String actual = Jsoap.getInstance().send(request);
+        
+        assertEquals(expected, actual);
+    }
+    
+}
+
+```
 
 ## Examples
 
-A simple request without parameters or result schema  
+A simple request without parameters or result schema
 ```cmd
 curl \
 -d '{
