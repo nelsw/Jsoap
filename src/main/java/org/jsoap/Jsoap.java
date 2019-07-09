@@ -84,7 +84,7 @@ public class Jsoap {
             if (bodyCall.statusCode() == 200) {
                 Document xmlBody = xml(bodyCall.body());
                 for (Map.Entry<String, String> e : request.params().entrySet()) {
-                    xmlBody.selectFirst(e.getKey()).text(e.getValue());
+                    xmlBody.selectFirst(e.getKey().replaceAll(":", "|")).text(e.getValue());
                 }
                 if (request.headers().isEmpty()) {
                     request.header("Content-Type", "text/xml;charset=" + request.encoding())
@@ -100,7 +100,7 @@ public class Jsoap {
                         .requestBody(xmlBody.html())
                         .execute();
                 if (xmlCall.statusCode() == 200) {
-                    return writeValue(resultSchema(xml(xmlCall.body()), request.schema()));
+                    return toJson(resultSchema(xml(xmlCall.body()), request.schema()));
                 }
             }
         } catch (Exception e) {
@@ -127,8 +127,12 @@ public class Jsoap {
         return Proxy.NO_PROXY;
     }
 
-    private Document xml(String xml) {
-        Document xmlBody = Parser.xmlParser().parseInput(xml, "");
+    /**
+     * @param body is the raw XML from {@link Connection.Response#body()}
+     * @return a sanitized document for Jsoap parsing and object mapping
+     */
+    private Document xml(String body) {
+        Document xmlBody = Parser.xmlParser().parseInput(body, "");
         xmlBody.outputSettings().prettyPrint(false);
         xmlBody = Jsoup.parse(Parser.unescapeEntities(xmlBody.toString(), true), "", Parser.xmlParser());
         xmlBody.outputSettings().prettyPrint(false);
@@ -156,7 +160,7 @@ public class Jsoap {
                     Set<?> rs;
                     String mapJson = property.getValue();
                     if (mapJson == null || mapJson.isEmpty()) {
-                        rs = element.select(tagName)
+                        rs = element.select(tagName.replaceAll(":", "|"))
                                 .stream()
                                 .map(Element::text)
                                 .filter(Objects::nonNull)
@@ -164,15 +168,15 @@ public class Jsoap {
                                 .collect(Collectors.toSet());
                     } else {
                         // ear muffs, we have to recurse.
-                        rs = element.select(tagName)
+                        rs = element.select(tagName.replaceAll(":", "|"))
                                 .stream()
-                                .map(e -> resultSchema(e, readEmbeddedSchema(mapJson)))
+                                .map(e -> resultSchema(e, fromJson(mapJson)))
                                 .filter(Objects::nonNull)
                                 .filter(m -> !m.isEmpty())
                                 .collect(Collectors.toSet());
                     }
                     if (!rs.isEmpty()) {
-                        result.put(tagName.replaceAll("\\|", ":"), rs.size() > 1 ? rs : rs.iterator().next());
+                        result.put(tagName, rs.size() > 1 ? rs : rs.iterator().next());
                     }
                 }
             }
@@ -180,7 +184,7 @@ public class Jsoap {
         return result;
     }
 
-    String writeValue(Object value) {
+    private String toJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -188,7 +192,7 @@ public class Jsoap {
         }
     }
 
-    private Map<String, String> readEmbeddedSchema(String value) {
+    private Map<String, String> fromJson(String value) {
         try {
             return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {

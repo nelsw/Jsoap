@@ -1,6 +1,7 @@
 import lombok.extern.log4j.Log4j2;
 import org.jsoap.Jsoap;
 import org.jsoap.Request;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -11,6 +12,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -18,74 +21,63 @@ import static org.junit.Assert.assertNotNull;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class Tests {
 
-    private LocalDateTime localDateTime = LocalDateTime.now().plus(Duration.ofDays(5)).truncatedTo(ChronoUnit.SECONDS);
     private Request request;
+    private String response;
 
     @Before
     public void before() {
+        response = null;
         request = new Request()
                 .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
                 .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
     }
 
+    @After
+    public void after() {
+        log.debug(response);
+        assertNotNull(response);
+    }
+
     @Test
     public void validRequestParams_sendValidRequest_returnValidJson() {
-        String json = Jsoap.getInstance().send(request);
-        log.debug(json);
-        assertNotNull(json);
+        response = Jsoap.getInstance().send(request);
     }
 
     @Test
     public void validRequest_sendRequest_returnJson() {
-        String json = Jsoap.getInstance().send(request
-                .params("listZipCodeList", "33401"));
-        log.debug(json);
-        assertNotNull(json);
+        response = Jsoap.getInstance().send(request.params("listZipCodeList", "33401"));
     }
 
     @Test
     public void validBodyParamsSchema_sendRequest_returnJson() {
-        String json = Jsoap.getInstance().send(request
+        String requestedTime =
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                        LocalDateTime.now()
+                                .plus(Duration.ofDays(5))
+                                .truncatedTo(ChronoUnit.SECONDS));
+        response = Jsoap.getInstance().send(request
                 .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
-                .params("requestedTime", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(localDateTime))
+                .params("requestedTime", requestedTime)
                 .schema("gml:boundedBy", "gml:coordinates")
                 .schema("gml:featureMember", "gml:coordinates", "app:validTime", "app:maximumTemperature"));
-        log.debug(json);
-        assertNotNull(json);
     }
 
     @Test
     public void invalidWsdl_sendRequest_returnResponse() {
-        String json = Jsoap.getInstance().send(request
-                .encoding("foo"));
-        log.debug(json);
-        assertNotNull(json);
+        response = Jsoap.getInstance().send(request.encoding("foo"));
     }
 
     @Test
     public void invalidBody_sendRequest_returnResponse() {
-        String json = Jsoap.getInstance().send(request
-                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList"));
-        log.debug(json);
-        assertNotNull(json);
+        response = Jsoap.getInstance().send(request.body("https://foo.com"));
     }
 
     @Test
     public void invalidProxyPort_sendRequest_returnResponse() {
-        String json = Jsoap.getInstance().send(request
-                .proxyPort(-1)
+        response = Jsoap.getInstance().send(request
+                .proxyType(Proxy.Type.SOCKS.name())
                 .proxyHost("foo")
-                .proxyType(Proxy.Type.SOCKS.name()));
-        log.debug(json);
-        assertNotNull(json);
-    }
-
-    @Test
-    public void invalid3() {
-        String json = Jsoap.getInstance().send(request
-                .schema("html", "header"));
-        log.debug(json);
-        assertNotNull(json);
+                .proxyPort(-1));
     }
 
 }

@@ -10,6 +10,8 @@ import javax.validation.constraints.NotNull;
 import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class represents a Jsoap Request, made by a client, with the intent to send and receive a SOAP message.
@@ -47,10 +49,10 @@ public class Request {
     Map<String, String> headers = new HashMap<>();
 
     /**
-     * Not an ordinary map. It is responsible for parsing a client response body JSON from server response body XML.
-     * While {@link #schema} is technically a {@code Map}, it helps to visualize it as the root node send a tree graph,
-     * where k=> {@code string}, DOM element tag name (for {@code CSS} selection made easy by {@link org.jsoup.Jsoup}
-     * and v=> {@code string}, which contains JSON maps send potential sub schemas, otherwise null/empty/blank
+     * Not an ordinary map. It is responsible for parsing client response body JSON from server response body XML.
+     * While technically a {@code Map}, it can be thought of as the root node of a tree graph,
+     * where k=> {@code string} DOM element tag name (for {@code CSS} selection made easy by {@link org.jsoup.Jsoup}
+     * and v=> {@code string} contains potential sub schemas, deserialized into a JSON map, otherwise null/empty/blank
      */
     Map<String, String> schema = new HashMap<>();
 
@@ -82,12 +84,8 @@ public class Request {
         return this;
     }
 
-    public Request schema(String rootTag, String... childTags) {
-        Map<String, String> schema = new HashMap<>();
-        for (String childTag : childTags) {
-            schema.put(childTag.replaceAll(":", "|"), "");
-        }
-        this.schema.put(rootTag.replaceAll(":", "|"), Jsoap.getInstance().writeValue(schema));
+    public Request schema(String key, String... values) {
+        schema.put(key, Stream.of(values).map(s -> "\"" + s + "\":\"\"").collect(Collectors.joining(",", "{", "}")));
         return this;
     }
 
