@@ -6,12 +6,25 @@
 The last [SOAP][sp] library you'll ever use.
 
 ## Installation
-To [make (software)][ms], include this dependency in the build of your project.
+To [make (software)][ms], include this dependency into the build of your project: 
+- [gradle](#gradle)
+- [maven](#maven)
+- [sbt](#sbt)
+- [leiningen](#leiningen)
+
+### gradle
+Include in your root build.gradle
+```groovy
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
 
 ### maven
-Include the following two (2) elements in pom.xml:
+Include in your pom.xml:
 ```xml
-<!-- remote artifact host for github.com repos -->
 <repository>
     <id>jitpack.io</id>
     <url>https://jitpack.io</url>
@@ -25,12 +38,28 @@ Include the following two (2) elements in pom.xml:
 </dependency>
 ```
 
+### sbt
+Include in your build.sbt:
+```play
+resolvers += "jitpack" at "https://jitpack.io"
+```
+```
+libraryDependencies += "com.github.User" % "Repo" % "Tag"
+```
+
+### leiningen
+Include in your project.clj
+```
+:repositories [["jitpack" "https://jitpack.io"]]
+```
+```
+:dependencies [[com.github.User/Repo "Tag"]]
+```
+
 ## Usage
 
 
 ## Examples
-
-### CLI
 
 A simple request without parameters or result schema  
 ```cmd
@@ -66,8 +95,6 @@ curl \
 -H 'Content-Type: application/json' \
 http://ifvanelswyk.com/jsoap
 ```
-
-### Java
 
 ----
 
