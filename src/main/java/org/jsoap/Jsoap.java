@@ -75,50 +75,44 @@ public class Jsoap {
     /**
      * Primary method responsible for facilitating client specified SOAP messaging.
      *
-     * @param r
+     * @param request
      * @return
      */
-    public String send(Request r) {
+    public String send(Request request) {
         try {
-            Connection.Response bodyCall = Jsoup.connect(r.body()).execute();
+            Connection.Response bodyCall = Jsoup.connect(request.body()).execute();
             if (bodyCall.statusCode() != 200) {
                 return null;
             }
-            Document xmlBody = xml(bodyCall);
-            for (Map.Entry<String, String> e : r.params().entrySet()) {
+            Document xmlBody = xml(bodyCall.body());
+            for (Map.Entry<String, String> e : request.params().entrySet()) {
                 xmlBody.selectFirst(e.getKey()).text(e.getValue());
             }
-            String requestBody = xmlBody.html();
-            if (r.headers().isEmpty()) {
-                r = r.header("Content-Length", String.valueOf(requestBody.getBytes().length))
-                        .header("Content-Type", "text/xml;charset=" + r.encoding())
+            if (request.headers().isEmpty()) {
+                request.header("Content-Length", String.valueOf(xmlBody.html().getBytes().length))
+                        .header("Content-Type", "text/xml;charset=" + request.encoding())
                         .header("Accept-Encoding", "gzip,deflate");
             }
             Document d = Jsoup
-                    .connect(r.wsdl())
-                    .headers(r.headers())
-                    .postDataCharset(r.encoding())
-                    .proxy(r.proxy())
-                    .requestBody(requestBody)
+                    .connect(request.wsdl())
+                    .headers(request.headers())
+                    .postDataCharset(request.encoding())
+                    .proxy(request.proxy())
+                    .requestBody(xmlBody.html())
                     .post();
 
-                return writeValue(resultSchema(xmlParser(d.toString(), ""), r.schema()));
+            return writeValue(resultSchema(xml(d.toString()), request.schema()));
         } catch (Exception e) {
-            e.printStackTrace();
             return e.getLocalizedMessage();
         }
     }
 
-    private Document xml(Connection.Response response) {
-        return xmlParser(response.body(), response.url().toString());
-    }
-
-    private Document xmlParser(String xml, String baseUri) {
+    private Document xml(String xml) {
         Document xmlBody = Parser.xmlParser().parseInput(xml, "");
         xmlBody.outputSettings().prettyPrint(false);
         xmlBody = Jsoup.parse(Parser.unescapeEntities(xmlBody.toString(), true), "", Parser.xmlParser());
         xmlBody.outputSettings().prettyPrint(false);
-        return  xmlBody;
+        return xmlBody;
     }
 
     /**
@@ -132,6 +126,9 @@ public class Jsoap {
     private Map<String, Object> resultSchema(Element element, Map<String, String> schema) {
         Map<String, Object> result = new HashMap<>();
         if (schema == null || schema.isEmpty()) {
+            if (element.hasText()) {
+                result.put("", element.text());
+            }
             return result;
         }
         for (Map.Entry<String, String> property : schema.entrySet()) {
@@ -163,12 +160,11 @@ public class Jsoap {
         return result;
     }
 
-    public String writeValue(Object value) {
+    String writeValue(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
+            throw new Error("");
         }
     }
 
@@ -176,8 +172,7 @@ public class Jsoap {
         try {
             return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            throw new Error("");
         }
     }
 

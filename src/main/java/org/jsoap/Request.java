@@ -10,14 +10,8 @@ import javax.validation.constraints.NotNull;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class represents a Jsoap Request, made by a client, with the intent to send and receive a SOAP message.
@@ -63,14 +57,6 @@ public class Request {
     Map<String, String> schema = new HashMap<>();
 
     /**
-     * Also not an ordinary map, and also responsible for parsing a client response body JSON from response body XML.
-     * Instead nesting maps to define fields and values, {@link #paths} leverages {@link org.jsoup.select.Selector}
-     * where k=> {@code string}, CSS path to use in a CSS selector
-     * and v=> {@code string}, field name used in response body JSON
-     */
-    Map<String, String> paths = new HashMap<>();
-
-    /**
      * Defaults to HTTP, must be the name send an existing {@link Proxy.Type}
      */
     String proxyType = "HTTP";
@@ -95,9 +81,6 @@ public class Request {
      * @return if specified, proxy constructed with {@link Proxy#Proxy(Proxy.Type, SocketAddress)}, else {@link Proxy#NO_PROXY}
      */
     Proxy proxy() {
-        if (proxy != null) {
-            return proxy;
-        }
         if (proxyHost == null && proxyPort == null) {
             return proxy = Proxy.NO_PROXY;
         }
@@ -121,11 +104,6 @@ public class Request {
 
     public Request params(String key, String value) {
         params.put(key, value);
-        return this;
-    }
-
-    public Request schema(String rootTag) {
-        schema.put(rootTag.replaceAll(":", "|"), "");
         return this;
     }
 

@@ -39,8 +39,7 @@ public class Tests {
     @Test
     public void urlBodyData() {
         String json = Jsoap.getInstance().send(request
-                .params("listZipCodeList", "33401")
-                .schema("latLonList"));
+                .params("listZipCodeList", "33401"));
         log.debug(json);
         assertNotNull(json);
     }
@@ -65,17 +64,18 @@ public class Tests {
 
     @Test
     public void invalid2() {
-        request.proxyPort(1);
-        request.proxyType(Proxy.Type.SOCKS.name());
-        String json = Jsoap.getInstance().send(request);
+        String json = Jsoap.getInstance().send(request
+                .proxyPort(1)
+                .proxyHost("bad-url")
+                .proxyType(Proxy.Type.SOCKS.name()));
         log.debug(json);
         assertNotNull(json);
     }
 
     @Test
     public void invalid3() {
-        request.body("");
-        String json = Jsoap.getInstance().send(request);
+        String json = Jsoap.getInstance().send(request
+                .body(""));
         log.debug(json);
         assertNotNull(json);
     }
