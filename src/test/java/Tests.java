@@ -37,7 +37,7 @@ public class Tests {
     }
 
     @Test
-    public void urlBodyData() {
+    public void validRequest_sendRequest_returnJson() {
         String json = Jsoap.getInstance().send(request
                 .params("listZipCodeList", "33401"));
         log.debug(json);
@@ -45,7 +45,7 @@ public class Tests {
     }
 
     @Test
-    public void urlBodyDataschemaMapJson() {
+    public void validBodyParamsSchema_sendRequest_returnJson() {
         String json = Jsoap.getInstance().send(request
                 .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
                 .params("requestedTime", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(localDateTime))
@@ -56,17 +56,25 @@ public class Tests {
     }
 
     @Test
-    public void invalid1() {
-        String json = Jsoap.getInstance().send(request);
+    public void invalidWsdl_sendRequest_returnResponse() {
+        String json = Jsoap.getInstance().send(request
+                .encoding("invalid encoding"));
         log.debug(json);
         assertNotNull(json);
     }
 
     @Test
-    public void invalid2() {
+    public void invalidBody_sendRequest_returnResponse() {
         String json = Jsoap.getInstance().send(request
-                .proxyPort(1)
-                .proxyHost("bad-url")
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList"));
+        log.debug(json);
+        assertNotNull(json);
+    }
+
+    @Test
+    public void invalidProxyPort_sendRequest_returnResponse() {
+        String json = Jsoap.getInstance().send(request
+                .proxyPort(-1)
                 .proxyType(Proxy.Type.SOCKS.name()));
         log.debug(json);
         assertNotNull(json);

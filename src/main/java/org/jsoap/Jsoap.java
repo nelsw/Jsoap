@@ -20,15 +20,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Implementation send a Java Singleton Design Pattern for optimal performance for AWS Lambda Containerization.
+ * Implementation of a Java Singleton Design Pattern for optimal performance in containerized environments.
  * It combines "Bill Pugh initialization on demand" and "thread safe volatile double check locking" principles.
- * IMO, this class does not represent an anti-pattern because send is not used in reflection, serialization, or cloning.
+ * To avoid an anti-pattern, this class should not be used in reflection, serialization, or cloning.
  */
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class Jsoap {
 
     /**
-     * <code>volatile</code> to denote a "happens-before relationship".
+     * {@code volatile} to denote a "happens-before relationship".
      * i.e. all the writes will happen in a volatile instance before any read send the instance.
      */
     @NonFinal
@@ -55,7 +55,6 @@ public class Jsoap {
 
     /**
      * The static function responsible for safely returning the desired object.
-     * Method signature normally reads ".getInstance" but an &fnof; is more succinct.
      *
      * @return a lazy initialized and volatile {@link Jsoap} instance
      */
@@ -81,30 +80,32 @@ public class Jsoap {
     public String send(Request request) {
         try {
             Connection.Response bodyCall = Jsoup.connect(request.body()).execute();
-            if (bodyCall.statusCode() != 200) {
-                return null;
+            if (bodyCall.statusCode() == 200) {
+                Document xmlBody = xml(bodyCall.body());
+                for (Map.Entry<String, String> e : request.params().entrySet()) {
+                    xmlBody.selectFirst(e.getKey()).text(e.getValue());
+                }
+                if (request.headers().isEmpty()) {
+                    request.header("Content-Type", "text/xml;charset=" + request.encoding())
+                            .header("Accept-Encoding", "gzip,deflate");
+                }
+                request.header("Content-Length", String.valueOf(xmlBody.html().getBytes().length));
+                Connection.Response xmlCall = Jsoup
+                        .connect(request.wsdl())
+                        .headers(request.headers())
+                        .postDataCharset(request.encoding())
+                        .proxy(request.proxy())
+                        .method(Connection.Method.POST)
+                        .requestBody(xmlBody.html())
+                        .execute();
+                if (xmlCall.statusCode() == 200) {
+                    return writeValue(resultSchema(xml(xmlCall.body()), request.schema()));
+                }
             }
-            Document xmlBody = xml(bodyCall.body());
-            for (Map.Entry<String, String> e : request.params().entrySet()) {
-                xmlBody.selectFirst(e.getKey()).text(e.getValue());
-            }
-            if (request.headers().isEmpty()) {
-                request.header("Content-Length", String.valueOf(xmlBody.html().getBytes().length))
-                        .header("Content-Type", "text/xml;charset=" + request.encoding())
-                        .header("Accept-Encoding", "gzip,deflate");
-            }
-            Document d = Jsoup
-                    .connect(request.wsdl())
-                    .headers(request.headers())
-                    .postDataCharset(request.encoding())
-                    .proxy(request.proxy())
-                    .requestBody(xmlBody.html())
-                    .post();
-
-            return writeValue(resultSchema(xml(d.toString()), request.schema()));
         } catch (Exception e) {
-            return e.getLocalizedMessage();
+            return String.format("error=[%s]", e.getMessage());
         }
+        return null;
     }
 
     private Document xml(String xml) {
@@ -129,31 +130,31 @@ public class Jsoap {
             if (element.hasText()) {
                 result.put("", element.text());
             }
-            return result;
-        }
-        for (Map.Entry<String, String> property : schema.entrySet()) {
-            String tagName = property.getKey();
-            if (tagName != null && !tagName.isEmpty()) {
-                Set<?> rs;
-                String mapJson = property.getValue();
-                if (mapJson == null || mapJson.isEmpty()) {
-                    rs = element.select(tagName)
-                            .stream()
-                            .map(Element::text)
-                            .filter(Objects::nonNull)
-                            .filter(s -> !s.isEmpty())
-                            .collect(Collectors.toSet());
-                } else {
-                    // ear muffs, we have to recurse.
-                    rs = element.select(tagName)
-                            .stream()
-                            .map(e -> resultSchema(e, readEmbeddedSchema(mapJson)))
-                            .filter(Objects::nonNull)
-                            .filter(m -> !m.isEmpty())
-                            .collect(Collectors.toSet());
-                }
-                if (!rs.isEmpty()) {
-                    result.put(tagName.replaceAll("\\|", ":"), rs.size() > 1 ? rs : rs.iterator().next());
+        } else {
+            for (Map.Entry<String, String> property : schema.entrySet()) {
+                String tagName = property.getKey();
+                if (tagName != null && !tagName.isEmpty()) {
+                    Set<?> rs;
+                    String mapJson = property.getValue();
+                    if (mapJson == null || mapJson.isEmpty()) {
+                        rs = element.select(tagName)
+                                .stream()
+                                .map(Element::text)
+                                .filter(Objects::nonNull)
+                                .filter(s -> !s.isEmpty())
+                                .collect(Collectors.toSet());
+                    } else {
+                        // ear muffs, we have to recurse.
+                        rs = element.select(tagName)
+                                .stream()
+                                .map(e -> resultSchema(e, readEmbeddedSchema(mapJson)))
+                                .filter(Objects::nonNull)
+                                .filter(m -> !m.isEmpty())
+                                .collect(Collectors.toSet());
+                    }
+                    if (!rs.isEmpty()) {
+                        result.put(tagName.replaceAll("\\|", ":"), rs.size() > 1 ? rs : rs.iterator().next());
+                    }
                 }
             }
         }
@@ -164,7 +165,7 @@ public class Jsoap {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            throw new Error("");
+            throw new Error(String.format("unable to write JSON value=[%s]", value));
         }
     }
 
@@ -172,7 +173,7 @@ public class Jsoap {
         try {
             return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {
-            throw new Error("");
+            throw new Error(String.format("unable to read JSON value=[%s]", value));
         }
     }
 
