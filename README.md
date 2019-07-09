@@ -116,7 +116,7 @@ curl \
   "body": "https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml",
 }' \
 -H 'Content-Type: application/json' \
-http://ifvanelswyk.com/jsoap
+https://dbc99ix1f1.execute-api.us-east-1.amazonaws.com/dev/jsoap
 ```
 
 A complex request with parameters and a nested result schema
@@ -140,14 +140,14 @@ curl \
   }
 }' \
 -H 'Content-Type: application/json' \
-http://ifvanelswyk.com/jsoap
+https://dbc99ix1f1.execute-api.us-east-1.amazonaws.com/dev/jsoap
 ```
 
 ----
 
 [sp]: https://en.wikipedia.org/wiki/SOAP
 [ms]: https://en.wikipedia.org/wiki/Make_(software)
-[ci-img]: https://travis-ci.com/connorvanelswyk/soapless.svg?branch=master
-[ci]: https://travis-ci.com/connorvanelswyk/soapless
-[coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/soapless/badge.svg?branch=master
-[coveralls]: https://coveralls.io/github/connorvanelswyk/soapless
+[ci-img]: https://travis-ci.com/connorvanelswyk/Jsoap.svg?branch=master
+[ci]: https://travis-ci.com/connorvanelswyk/Jsoap
+[coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/Jsoap/badge.svg?branch=master
+[coveralls]: https://coveralls.io/github/connorvanelswyk/Jsoap
