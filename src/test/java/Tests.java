@@ -23,7 +23,6 @@ public class Tests {
 
     @Before
     public void before() {
-        System.out.println();
         request = new Request()
                 .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
                 .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
@@ -58,7 +57,7 @@ public class Tests {
     @Test
     public void invalidWsdl_sendRequest_returnResponse() {
         String json = Jsoap.getInstance().send(request
-                .encoding("invalid encoding"));
+                .encoding("foo"));
         log.debug(json);
         assertNotNull(json);
     }
@@ -75,6 +74,7 @@ public class Tests {
     public void invalidProxyPort_sendRequest_returnResponse() {
         String json = Jsoap.getInstance().send(request
                 .proxyPort(-1)
+                .proxyHost("foo")
                 .proxyType(Proxy.Type.SOCKS.name()));
         log.debug(json);
         assertNotNull(json);
@@ -83,7 +83,7 @@ public class Tests {
     @Test
     public void invalid3() {
         String json = Jsoap.getInstance().send(request
-                .body(""));
+                .schema("html", "header"));
         log.debug(json);
         assertNotNull(json);
     }

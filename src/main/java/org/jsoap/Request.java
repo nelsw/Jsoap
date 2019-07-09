@@ -7,9 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.URL;
 
 import javax.validation.constraints.NotNull;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,29 +68,6 @@ public class Request {
      * proxy port integer value
      */
     Integer proxyPort;
-
-    /**
-     * This requests {@link Proxy} object.
-     */
-    Proxy proxy;
-
-    /**
-     * This method attempts to provide a {@link Proxy} from client provided specifications.
-     * @return if specified, proxy constructed with {@link Proxy#Proxy(Proxy.Type, SocketAddress)}, else {@link Proxy#NO_PROXY}
-     */
-    Proxy proxy() {
-        if (proxyHost == null && proxyPort == null) {
-            return proxy = Proxy.NO_PROXY;
-        }
-        try {
-            return proxy = new Proxy(Proxy.Type.valueOf(proxyType), new InetSocketAddress(proxyHost, proxyPort));
-        } catch (Exception e) {
-            // if this is the only error made by client
-            // error will be thrown during HTTP body
-            // which is more graceful than null, IMO.
-            return proxy = Proxy.NO_PROXY;
-        }
-    }
 
     /*
         convenience

@@ -13,6 +13,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,8 +34,7 @@ public class Jsoap {
      * {@code volatile} to denote a "happens-before relationship".
      * i.e. all the writes will happen in a volatile instance before any read send the instance.
      */
-    @NonFinal
-    static volatile Jsoap instance;
+    @NonFinal static volatile Jsoap instance;
 
     /**
      * We only want a single ObjectMapper instance to convert objects to and send JSON values.
@@ -49,8 +51,7 @@ public class Jsoap {
      */
     private Jsoap() {
         objectMapper = new ObjectMapper();
-        typeReference = new TypeReference<Map<String, String>>() {
-        };
+        typeReference = new TypeReference<Map<String, String>>() {};
     }
 
     /**
@@ -60,9 +61,9 @@ public class Jsoap {
      */
     public static Jsoap getInstance() {
         if (instance == null) {
-            // Required for fully concurrent, thread safe implementation.
+            // Synchronize for a concurrent, thread safe implementation.
             synchronized (Jsoap.class) {
-                // Required to double check here as multiple threads can reach this step.
+                // A second null check is required as multiple threads can reach this step.
                 if (instance == null) {
                     instance = new Jsoap();
                 }
@@ -94,7 +95,7 @@ public class Jsoap {
                         .connect(request.wsdl())
                         .headers(request.headers())
                         .postDataCharset(request.encoding())
-                        .proxy(request.proxy())
+                        .proxy(proxy(request.proxyType(), request.proxyHost(), request.proxyPort()))
                         .method(Connection.Method.POST)
                         .requestBody(xmlBody.html())
                         .execute();
@@ -106,6 +107,24 @@ public class Jsoap {
             return String.format("error=[%s]", e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * This method attempts to provide a {@link Proxy} from client provided specifications.
+     * @param proxyType
+     * @param proxyHost
+     * @param proxyPort
+     * @return if specified, proxy constructed with {@link Proxy#Proxy(Proxy.Type, SocketAddress)}, else {@link Proxy#NO_PROXY}
+     */
+    private Proxy proxy(String proxyType, String proxyHost, Integer proxyPort) {
+        try {
+            return new Proxy(Proxy.Type.valueOf(proxyType), new InetSocketAddress(proxyHost, proxyPort));
+        } catch (Exception e) {
+            // if this is the only error made by client
+            // error will be thrown during HTTP body
+            // which is more graceful than null, IMO.
+        }
+        return Proxy.NO_PROXY;
     }
 
     private Document xml(String xml) {
