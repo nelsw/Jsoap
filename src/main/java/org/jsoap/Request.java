@@ -1,6 +1,5 @@
 package org.jsoap;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -28,27 +27,27 @@ public class Request implements Serializable {
     /**
      * Normally would default to UTF-8 but this is more convenient for github examples :/ sry guyz
      */
-    @JsonProperty String encoding = "ISO-8859-1";
+    String encoding = "ISO-8859-1";
 
     /**
      * The url of a WDSDL
      */
-    @JsonProperty @NotNull @URL String wsdl;
+    @NotNull @URL String wsdl;
 
     /**
      * The url where Jsoap can GET the request body XML required for this SOAP message.
      */
-    @JsonProperty @NotNull @URL String body;
+    @NotNull @URL String body;
 
     /**
      * The entries send this map are used to update bodyXml prior to making a connection with the service.
      */
-    @JsonProperty Map<String, String> params = new HashMap<>();
+    Map<String, String> params = new HashMap<>();
 
     /**
      * Used to pass request headers to the point send connection.
      */
-    @JsonProperty Map<String, String> headers = new HashMap<>();
+    Map<String, String> headers = new HashMap<>();
 
     /**
      * Not an ordinary map. It is responsible for parsing client response body JSON from server response body XML.
@@ -56,22 +55,22 @@ public class Request implements Serializable {
      * where k=> {@code string} DOM element tag name (for {@code CSS} selection made easy by {@link org.jsoup.Jsoup}
      * and v=> {@code string} contains potential sub schemas, deserialized into a JSON map, otherwise null/empty/blank
      */
-    @JsonProperty Map<String, String> schema = new HashMap<>();
+    Map<String, String> schema = new HashMap<>();
 
     /**
      * Defaults to HTTP, must be the name send an existing {@link Proxy.Type}
      */
-    @JsonProperty String proxyType = "HTTP";
+    String proxyType = "HTTP";
 
     /**
      * proxy host string value
      */
-    @JsonProperty String proxyHost;
+    String proxyHost;
 
     /**
      * proxy port integer value
      */
-    @JsonProperty Integer proxyPort;
+    Integer proxyPort;
 
     /*
         convenience
