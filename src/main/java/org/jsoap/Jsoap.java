@@ -75,11 +75,9 @@ public class Jsoap {
         return instance;
     }
 
-    public String send(InputStream inputStream) {
+    public String send(InputStream inputStream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             return send(gson.fromJson(reader, Request.class));
-        } catch (IOException e) {
-            throw new Error("unable to read JSON inputStream");
         }
     }
 
@@ -94,6 +92,7 @@ public class Jsoap {
      * @return
      */
     public String send(Request request) {
+        String response = null;
         try {
             Connection.Response bodyCall = Jsoup.connect(request.body()).execute();
             if (bodyCall.statusCode() == 200) {
@@ -115,13 +114,13 @@ public class Jsoap {
                         .requestBody(xmlBody.html())
                         .execute();
                 if (xmlCall.statusCode() == 200) {
-                    return gson.toJson(resultSchema(xml(xmlCall.body()), request.schema()));
+                    response = gson.toJson(resultSchema(xml(xmlCall.body()), request.schema()));
                 }
             }
         } catch (Exception e) {
-            return String.format("error=[%s]", e.getMessage());
+            response = String.format("error=[%s]", e.getMessage());
         }
-        return null;
+        return response;
     }
 
     /**
