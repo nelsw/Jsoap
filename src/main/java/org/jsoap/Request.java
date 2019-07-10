@@ -1,5 +1,6 @@
 package org.jsoap;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -7,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.URL;
 
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,32 +23,32 @@ import java.util.stream.Stream;
 @Data
 @Accessors(fluent = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Request {
+public class Request implements Serializable {
 
     /**
      * Normally would default to UTF-8 but this is more convenient for github examples :/ sry guyz
      */
-    String encoding = "ISO-8859-1";
+    @JsonProperty String encoding = "ISO-8859-1";
 
     /**
      * The url of a WDSDL
      */
-    @NotNull @URL String wsdl;
+    @JsonProperty @NotNull @URL String wsdl;
 
     /**
      * The url where Jsoap can GET the request body XML required for this SOAP message.
      */
-    @NotNull @URL String body;
+    @JsonProperty @NotNull @URL String body;
 
     /**
      * The entries send this map are used to update bodyXml prior to making a connection with the service.
      */
-    Map<String, String> params = new HashMap<>();
+    @JsonProperty Map<String, String> params = new HashMap<>();
 
     /**
      * Used to pass request headers to the point send connection.
      */
-    Map<String, String> headers = new HashMap<>();
+    @JsonProperty Map<String, String> headers = new HashMap<>();
 
     /**
      * Not an ordinary map. It is responsible for parsing client response body JSON from server response body XML.
@@ -54,22 +56,22 @@ public class Request {
      * where k=> {@code string} DOM element tag name (for {@code CSS} selection made easy by {@link org.jsoup.Jsoup}
      * and v=> {@code string} contains potential sub schemas, deserialized into a JSON map, otherwise null/empty/blank
      */
-    Map<String, String> schema = new HashMap<>();
+    @JsonProperty Map<String, String> schema = new HashMap<>();
 
     /**
      * Defaults to HTTP, must be the name send an existing {@link Proxy.Type}
      */
-    String proxyType = "HTTP";
+    @JsonProperty String proxyType = "HTTP";
 
     /**
      * proxy host string value
      */
-    String proxyHost;
+    @JsonProperty String proxyHost;
 
     /**
      * proxy port integer value
      */
-    Integer proxyPort;
+    @JsonProperty Integer proxyPort;
 
     /*
         convenience

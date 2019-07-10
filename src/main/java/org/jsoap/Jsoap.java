@@ -1,7 +1,7 @@
 package org.jsoap;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import lombok.AccessLevel;
@@ -13,7 +13,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
@@ -74,6 +77,10 @@ public class Jsoap {
             }
         }
         return instance;
+    }
+
+    public String send(InputStream inputStream) {
+        return send(fromStream(inputStream));
     }
 
     public String send(String json) {
@@ -196,7 +203,15 @@ public class Jsoap {
         try {
             return objectMapper.readValue(value, mapStrStr);
         } catch (IOException e) {
-            throw new Error(String.format("unable to read JSON value=[%s]", value));
+            throw new Error(String.format("unable to read JSON string: [%s]", value));
+        }
+    }
+
+    private Request fromStream(InputStream inputStream) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            return objectMapper.readValue(reader, Request.class);
+        } catch (IOException e) {
+            throw new Error("unable to read JSON stream");
         }
     }
 

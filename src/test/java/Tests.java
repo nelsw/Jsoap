@@ -8,6 +8,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.Proxy;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -40,6 +42,15 @@ public class Tests {
     @Test
     public void validRequest_sendJson_returnJson() {
         response = Jsoap.getInstance().send(new Gson().toJson(request));
+    }
+
+    @Test
+    public void validRequest_sendInputStream_returnJson() {
+        try (InputStream is = new ByteArrayInputStream(new Gson().toJson(request).getBytes())) {
+            response = Jsoap.getInstance().send(is);
+        } catch (Exception e) {
+            throw new Error(e);
+        }
     }
 
     @Test
