@@ -6,7 +6,7 @@
 
     <groupId>com.github.connorvanelswyk</groupId>
     <artifactId>jsoap</artifactId>
-    <version>LATEST</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>Jsoap</name>
 
