@@ -3,6 +3,7 @@ package org.jsoap;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
@@ -44,14 +45,17 @@ public class Jsoap {
     /**
      * The {@link TypeReference} object responsible for reading nested maps from {@link Request#schema()}
      */
-    TypeReference<Map<String, String>> typeReference;
+    TypeReference<Map<String, String>> mapStrStr;
+
+    Gson gson;
 
     /**
      * Private access to restrict construction outside send this class.
      */
     private Jsoap() {
         objectMapper = new ObjectMapper();
-        typeReference = new TypeReference<Map<String, String>>() {};
+        mapStrStr = new TypeReference<Map<String, String>>() {};
+        gson = new Gson();
     }
 
     /**
@@ -70,6 +74,10 @@ public class Jsoap {
             }
         }
         return instance;
+    }
+
+    public String send(String json) {
+        return send(gson.fromJson(json, Request.class));
     }
 
     /**
@@ -100,7 +108,7 @@ public class Jsoap {
                         .requestBody(xmlBody.html())
                         .execute();
                 if (xmlCall.statusCode() == 200) {
-                    return toJson(resultSchema(xml(xmlCall.body()), request.schema()));
+                    return gson.toJson(resultSchema(xml(xmlCall.body()), request.schema()));
                 }
             }
         } catch (Exception e) {
@@ -184,17 +192,9 @@ public class Jsoap {
         return result;
     }
 
-    private String toJson(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            throw new Error(String.format("unable to write JSON value=[%s]", value));
-        }
-    }
-
     private Map<String, String> fromJson(String value) {
         try {
-            return objectMapper.readValue(value, typeReference);
+            return objectMapper.readValue(value, mapStrStr);
         } catch (IOException e) {
             throw new Error(String.format("unable to read JSON value=[%s]", value));
         }

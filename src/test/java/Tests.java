@@ -1,3 +1,4 @@
+import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import org.jsoap.Jsoap;
 import org.jsoap.Request;
@@ -37,17 +38,22 @@ public class Tests {
     }
 
     @Test
-    public void validRequestParams_sendValidRequest_returnValidJson() {
-        response = Jsoap.getInstance().send(request);
+    public void validRequest_sendJson_returnJson() {
+        response = Jsoap.getInstance().send(new Gson().toJson(request));
     }
 
     @Test
     public void validRequest_sendRequest_returnJson() {
+        response = Jsoap.getInstance().send(request);
+    }
+
+    @Test
+    public void validRequestParam_sendRequest_returnJson() {
         response = Jsoap.getInstance().send(request.params("listZipCodeList", "33401"));
     }
 
     @Test
-    public void validBodyParamsSchema_sendRequest_returnJson() {
+    public void validRequestBodyParamSchema_sendRequest_returnJson() {
         String requestedTime =
                 DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
                         LocalDateTime.now()
@@ -61,17 +67,17 @@ public class Tests {
     }
 
     @Test
-    public void invalidWsdl_sendRequest_returnResponse() {
+    public void invalidWsdl_sendRequest_returnErrStr() {
         response = Jsoap.getInstance().send(request.encoding("foo"));
     }
 
     @Test
-    public void invalidBody_sendRequest_returnResponse() {
+    public void invalidBody_sendRequest_returnErrStr() {
         response = Jsoap.getInstance().send(request.body("https://foo.com"));
     }
 
     @Test
-    public void invalidProxyPort_sendRequest_returnResponse() {
+    public void invalidProxyTypeHostPort_sendRequest_returnErrStr() {
         response = Jsoap.getInstance().send(request
                 .proxyType(Proxy.Type.SOCKS.name())
                 .proxyHost("foo")
