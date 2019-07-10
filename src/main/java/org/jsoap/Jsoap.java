@@ -94,7 +94,7 @@ public class Jsoap {
     public String send(Request request) {
         String response = null;
         try {
-            Connection.Response bodyCall = Jsoup.connect(request.body()).execute();
+            Connection.Response bodyCall = Jsoup.connect(request.xml()).execute();
             if (bodyCall.statusCode() == 200) {
                 Document xmlBody = xml(bodyCall.body());
                 for (Map.Entry<String, String> e : request.params().entrySet()) {
@@ -135,7 +135,7 @@ public class Jsoap {
             return new Proxy(Proxy.Type.valueOf(proxyType), new InetSocketAddress(proxyHost, proxyPort));
         } catch (Exception e) {
             // if this is the only error made by client
-            // error will be thrown during HTTP body
+            // error will be thrown during HTTP xml
             // which is more graceful than null, IMO.
         }
         return Proxy.NO_PROXY;

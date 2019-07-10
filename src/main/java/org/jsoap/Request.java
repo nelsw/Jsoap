@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 /**
  * This class represents a Jsoap Request, made by a client, with the intent to send and receive a SOAP message.
  * It models the information used by this library to address an HTTP request to the SOAP web service wsdl {@link #wsdl}
- * It also models a result object schema for parsing server response body XML into client response body JSON.
+ * It also models a result object schema for parsing server response xml XML into client response xml JSON.
  */
 @Data
 @Accessors(fluent = true)
@@ -37,10 +37,10 @@ public class Request implements Serializable {
     /**
      * The url where Jsoap can GET the request body XML required for this SOAP message.
      */
-    @NotNull @URL String body;
+    @NotNull @URL String xml;
 
     /**
-     * The entries send this map are used to update bodyXml prior to making a connection with the service.
+     * The entries send this map are used to update request body XML prior to making a connection with the service.
      */
     Map<String, String> params = new HashMap<>();
 
