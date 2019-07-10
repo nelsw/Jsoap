@@ -25,9 +25,9 @@ import java.util.stream.Stream;
 public class Request implements Serializable {
 
     /**
-     * Normally would default to UTF-8 but this is more convenient for github examples :/ sry guyz
+     * Encoding defaults to an 8 bit encoding scheme for Unicode.
      */
-    String encoding = "ISO-8859-1";
+    String encoding = "UTF-8";
 
     /**
      * The url of a WDSDL
@@ -37,7 +37,7 @@ public class Request implements Serializable {
     /**
      * The url where Jsoap can GET the request body XML required for this SOAP message.
      */
-    @NotNull @URL String xml;
+    @NotNull @URL String body;
 
     /**
      * The entries send this map are used to update request body XML prior to making a connection with the service.

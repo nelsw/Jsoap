@@ -94,7 +94,7 @@ public class Jsoap {
     public String send(Request request) {
         String response = null;
         try {
-            Connection.Response bodyCall = Jsoup.connect(request.xml()).execute();
+            Connection.Response bodyCall = Jsoup.connect(request.body()).execute();
             if (bodyCall.statusCode() == 200) {
                 Document xmlBody = xml(bodyCall.body());
                 for (Map.Entry<String, String> e : request.params().entrySet()) {

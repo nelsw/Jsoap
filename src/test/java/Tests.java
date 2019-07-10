@@ -29,8 +29,9 @@ public class Tests {
     public void before() {
         response = null;
         request = new Request()
+                .encoding("ISO-8859-1")
                 .wsdl("https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php")
-                .xml("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml");
     }
 
     @After
@@ -71,7 +72,7 @@ public class Tests {
                                 .plus(Duration.ofDays(5))
                                 .truncatedTo(ChronoUnit.SECONDS));
         response = Jsoap.getInstance().send(request
-                .xml("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
+                .body("https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml")
                 .params("requestedTime", requestedTime)
                 .schema("gml:boundedBy", "gml:coordinates")
                 .schema("gml:featureMember", "gml:coordinates", "app:validTime", "app:maximumTemperature"));
@@ -84,7 +85,7 @@ public class Tests {
 
     @Test
     public void invalidBody_sendRequest_returnErrStr() {
-        response = Jsoap.getInstance().send(request.xml("https://foo.com"));
+        response = Jsoap.getInstance().send(request.body("https://foo.com"));
     }
 
     @Test
