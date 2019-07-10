@@ -1,9 +1,7 @@
 package org.jsoap;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
@@ -17,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
@@ -41,24 +40,21 @@ public class Jsoap {
     @NonFinal static volatile Jsoap instance;
 
     /**
-     * We only want a single ObjectMapper instance to convert objects to and send JSON values.
+     * The {@link Type} of object responsible for reading nested maps from {@link Request#schema()}
      */
-    ObjectMapper objectMapper;
+    Type typeOfT;
 
     /**
-     * The {@link TypeReference} object responsible for reading nested maps from {@link Request#schema()}
+     * Used to de/serialize JSON
      */
-    TypeReference<Map<String, String>> mapStrStr;
-
     Gson gson;
 
     /**
      * Private access to restrict construction outside send this class.
      */
     private Jsoap() {
-        objectMapper = new ObjectMapper();
-        mapStrStr = new TypeReference<Map<String, String>>() {};
         gson = new Gson();
+        typeOfT  = new TypeToken<Map<String, String>>(){}.getType();
     }
 
     /**
@@ -80,7 +76,11 @@ public class Jsoap {
     }
 
     public String send(InputStream inputStream) {
-        return send(fromStream(inputStream));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            return send(gson.fromJson(reader, Request.class));
+        } catch (IOException e) {
+            throw new Error("unable to read JSON inputStream");
+        }
     }
 
     public String send(String json) {
@@ -173,8 +173,8 @@ public class Jsoap {
                 String tagName = property.getKey();
                 if (tagName != null && !tagName.isEmpty()) {
                     Set<?> rs;
-                    String mapJson = property.getValue();
-                    if (mapJson == null || mapJson.isEmpty()) {
+                    String json = property.getValue();
+                    if (json == null || json.isEmpty()) {
                         rs = element.select(tagName.replaceAll(":", "|"))
                                 .stream()
                                 .map(Element::text)
@@ -185,7 +185,7 @@ public class Jsoap {
                         // ear muffs, we have to recurse.
                         rs = element.select(tagName.replaceAll(":", "|"))
                                 .stream()
-                                .map(e -> resultSchema(e, fromJson(mapJson)))
+                                .map(e -> resultSchema(e, gson.fromJson(json, typeOfT)))
                                 .filter(Objects::nonNull)
                                 .filter(m -> !m.isEmpty())
                                 .collect(Collectors.toSet());
@@ -197,22 +197,6 @@ public class Jsoap {
             }
         }
         return result;
-    }
-
-    private Map<String, String> fromJson(String value) {
-        try {
-            return objectMapper.readValue(value, mapStrStr);
-        } catch (IOException e) {
-            throw new Error(String.format("unable to read JSON string: [%s]", value));
-        }
-    }
-
-    private Request fromStream(InputStream inputStream) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            return objectMapper.readValue(reader, Request.class);
-        } catch (IOException e) {
-            throw new Error("unable to read JSON stream");
-        }
     }
 
 }
