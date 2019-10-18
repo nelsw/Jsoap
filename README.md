@@ -114,10 +114,10 @@ See [Jsoap-api][js].
 
 ----
 
-[js]: https://github.com/connorvanelswyk/Jsoap-api
+[js]: https://github.com/nelsw/Jsoap-api
 [sp]: https://en.wikipedia.org/wiki/SOAP
 [ms]: https://en.wikipedia.org/wiki/Make_(software)
-[ci-img]: https://travis-ci.com/connorvanelswyk/Jsoap.svg?branch=master
-[ci]: https://travis-ci.com/connorvanelswyk/Jsoap
-[coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/Jsoap/badge.svg?branch=master
-[coveralls]: https://coveralls.io/github/connorvanelswyk/Jsoap
+[ci-img]: https://travis-ci.com/nelsw/Jsoap.svg?branch=master
+[ci]: https://travis-ci.com/nelsw/Jsoap
+[coveralls-img]: https://coveralls.io/repos/github/nelsw/Jsoap/badge.svg?branch=master
+[coveralls]: https://coveralls.io/github/nelsw/Jsoap
